@@ -23,7 +23,6 @@ class AWS_Batch(object):
         # read the joson file
         with open(self.batch_cfg_file) as cfgFileHandle:
             self.seq2hla_cfg= json.load(cfgFileHandle)
-
         # get the job parameters
         self.jobParams = self.seq2hla_cfg["job_parameters"]
         # get the submit options
@@ -64,7 +63,7 @@ def Summary(hdr):
     print('\tInput map file: ' + bc.jobParams['mf'])
     print('\tNo. rows in map file: ' + str(norows))
     print('\tMemory: ' + str(bc.submitOpts['memory']))
-    print('\tEnvironment var ' + bc.envSlots['name'] + ": " + bc.envSlots['value'])
+    print('\tEnvironment var' + bc.envSlots['name'] + ": " + bc.envSlots['value'])
     print('\tNo. of threads/cores: ' + str(bc.submitOpts['vcpus']))
     print('\tDocker command: ' + bc.jobParams['cmd'])
     print('\tMain python script: ' + bc.jobParams['pyscript'])
@@ -139,7 +138,7 @@ if inputfile != None:
     if not os.path.isfile(inputfile):
         pError("Map input file " + inputfile + " not found")
         sys.exit(2)
-    bc.jobParams['mf'] = inputfile
+    bc.jobParams['mf'] = os.path.abspath(inputfile)
 # count lines in file (number of jobs)
 maplist = []
 with open(inputfile, mode='r') as csv_file:
@@ -164,6 +163,7 @@ except Exception as e:
 if test:
     pInfo('Test mode complete; no actual submitting of job')
 else:
+    pDebug('job params: \n\t' + str(bc.jobParams))
     subOut = batchC.submit_job(
                    jobName = jobname,
                    jobQueue = bc.queue,

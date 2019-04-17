@@ -1,6 +1,6 @@
 {
     "aws_profile": "dev",
-    "queue": "bioinf_od",
+    "queue": "bioinf_seq2hla",
     "job_parameters": {
         "cmd": "run_pyscript.bash",
         "pyscript": "/usr/local/bin/process_seq2hla.py",
@@ -9,8 +9,9 @@
         "wd": "workdir",
         "lf": "logfile.log",
         "th": "8",
-        "dflags": "--arrayjob --summary",
-        "options": ""
+        "aj": "--arrayjob",
+        "su": "--summary",
+        "db": "--Debug"
     },
     "submit_opts": {
         "jobdef": "bioinf_seq2hla",
