@@ -1,0 +1,27 @@
+{
+    "aws_profile": "dev",
+    "queue": "bioinf_od",
+    "job_parameters": {
+        "cmd": "run_pyscript.bash",
+        "pyscript": "/usr/local/bin/process_seq2hla.py",
+        "mf": "mapfile",
+        "sp": "/usr/local/seq2hla/seq2HLA.py",
+        "wd": "workdir",
+        "lf": "logfile.log",
+        "th": "8",
+        "dflags": "--arrayjob --summary",
+        "options": ""
+    },
+    "submit_opts": {
+        "jobdef": "bioinf_seq2hla",
+        "vcpus":  8,
+        "memory": 5000,
+        "command": [],
+        "environment": [
+            {
+                "name": "NSLOTS",
+                "value": "1"
+            }
+        ]
+    }
+}

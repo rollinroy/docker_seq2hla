@@ -1,0 +1,43 @@
+FROM uwgac/r-3.5.2-mkl
+
+# install dxtoolkit
+RUN apt-get update &&  apt-get install -y \
+    python-setuptools \
+    python-virtualenv \
+    cmake \
+    libboost-all-dev \
+    libcurl4-openssl-dev \
+    zlib1g-dev \
+    flex \
+    bison \
+    openssl \
+    libssl-dev \
+    autoconf
+
+RUN mkdir -p /usr/local/src/dxtoolkit/v0.276.0 && \
+    cd /usr/local/src/dxtoolkit/v0.276.0 && \
+    wget https://wiki.dnanexus.com/images/files/dx-toolkit-v0.276.0-ubuntu-16.04-amd64.tar.gz && \
+    tar -xzf dx-toolkit-v0.276.0-ubuntu-16.04-amd64.tar.gz && \
+    ln -s /usr/local/src/dxtoolkit/v0.276.0/dx-toolkit /usr/local/dx-toolkit
+
+# bowtie
+RUN apt-get update && apt-get install -y bowtie
+
+# add seq2hla and processing script
+ADD seq2hla.tgz /usr/local/
+ADD process_seq2hla.py /usr/local/bin/
+
+# add biopython
+RUN pip install -U biopython
+
+# install sudo
+RUN apt-get update && apt-get install -y sudo
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+# add ubuntu
+RUN groupadd -g 1001 m2gen && \
+    useradd -m -s /bin/bash -r -u 1000 -g m2gen ubuntu
+RUN adduser ubuntu sudo
+RUN echo "source /usr/local/dx-toolkit/environment" >> /home/ubuntu/.bashrc
+
+USER ubuntu:m2gen
