@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y bowtie
 # add seq2hla and processing script
 ADD seq2hla.tgz /usr/local/
 ADD process_seq2hla.py /usr/local/bin/
+ADD run_pyscript.bash /usr/local/bin
 
 # add biopython
 RUN pip install -U biopython
