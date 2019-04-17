@@ -63,7 +63,7 @@ def Summary(hdr):
     print('\tInput map file: ' + bc.jobParams['mf'])
     print('\tNo. rows in map file: ' + str(norows))
     print('\tMemory: ' + str(bc.submitOpts['memory']))
-    print('\tEnvironment var' + bc.envSlots['name'] + ": " + bc.envSlots['value'])
+    print('\tEnvironment var ' + bc.envSlots['name'] + ": " + bc.envSlots['value'])
     print('\tNo. of threads/cores: ' + str(bc.submitOpts['vcpus']))
     print('\tDocker command: ' + bc.jobParams['cmd'])
     print('\tMain python script: ' + bc.jobParams['pyscript'])
