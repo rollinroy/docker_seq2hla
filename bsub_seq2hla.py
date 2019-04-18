@@ -68,7 +68,6 @@ def Summary(hdr):
     print('\tDocker command: ' + bc.jobParams['cmd'])
     print('\tMain python script: ' + bc.jobParams['pyscript'])
     print('\tseq2hla script: ' + bc.jobParams['sp'])
-    print('\tlog file: ' + bc.jobParams['lf'])
     print('\tAWS profile: ' + bc.profile)
     print('\tDebug: ' + str(debug))
     tbegin=time.asctime()

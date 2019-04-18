@@ -7,7 +7,6 @@
         "mf": "mapfile",
         "sp": "/usr/local/seq2hla/seq2HLA.py",
         "wd": "workdir",
-        "lf": "logfile.log",
         "th": "8",
         "aj": "--arrayjob",
         "su": "--summary",
@@ -21,7 +20,7 @@
         "environment": [
             {
                 "name": "NSLOTS",
-                "value": "1"
+                "value": "8"
             }
         ]
     }
