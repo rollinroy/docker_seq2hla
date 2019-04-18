@@ -205,7 +205,7 @@ if log :
     fullLog = workdir + "/" + fullLog
 # create the trace file name (for arrayjob)
 if arrayjob:
-    traceLog = fullLog.replace(".log",".trace")
+    fullTrace = fullLog.replace(".log",".trace")
     myLogger = Logger(fullTrace)
     sys.stderr = sys.stdout = myLogger
 
