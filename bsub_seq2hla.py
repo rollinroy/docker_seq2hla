@@ -175,5 +175,5 @@ else:
                       "memory": bc.submitOpts["memory"],
                       "environment": bc.submitOpts['environment']
                    }
-    pInfo('Submitted jobName: ' + subOut['jobName'] + ' jobId: ' + subOut['jobId'])
     )
+    pInfo('Submitted jobName: ' + subOut['jobName'] + ' jobId: ' + subOut['jobId'])
