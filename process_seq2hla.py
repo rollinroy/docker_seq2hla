@@ -34,10 +34,41 @@ class Logger(object):
 
 # def functions
 def flush():
-    if trace:
+    if arrayjob:
         myLogger.flush()
     else:
         sys.stdout.flush()
+
+def parseMapfile(mapfile_a, filerow_a):
+    # get the map names based in row number in the map file
+    mapinfo = {}
+    # get the  number of rows
+    pInfo('Reading mapfile ' + mapfile_a)
+    maplist = []
+    with open(mapfile_a, mode='r') as csv_file:
+        for row in csv.reader(csv_file):
+            if row:
+                maplist.append(row)
+    norows = len(maplist)
+    mapinfo['norows'] = norows
+    # check filerow
+    if filerow_a > norows or filerow_a < 1:
+        pError('Invalid file row (' + str(filerow_a) +') : 1/' + norows)
+        sys.exit(2)
+    # get the maprow and check length
+    maprow = maplist[filerow_a-1]
+    nofields = 5
+    if len(maprow) != nofields:
+        pError('File row has incorrect number of fields (' + str(len(maprow)) +
+               '/' + str(nofields))
+        sys.exit(2)
+    # get prefix, file 1 names; file 2 names;
+    mapinfo['fprefix'] = maprow[0]
+    mapinfo['fd1'] = maprow[2]
+    mapinfo['fs1'] = maprow[1]
+    mapinfo['fd2'] = maprow[4]
+    mapinfo['fs2'] = maprow[3]
+    return mapinfo
 
 msgErrPrefix='>>> Error (' + os.path.basename(__file__) +') '
 msgInfoPrefix='>>> Info (' + os.path.basename(__file__) +') '
@@ -64,11 +95,12 @@ def Summary(hdr):
     print('\tRNA Seq script: ' + seqproc)
     print('\tRNA Seq script threads: ' + str(threads))
     print('\tMapping file: ' + mapfile)
-    print('\tIndex into map file: ' + str(filerow))
+    print('\tRow into map file: ' + str(filerow))
+    print('\tMap info: ' + str(mapinfo))
     print('\tNo download: ' + str(nodownload))
     print('\tShow download progress: ' + str(progress))
     print('\tKeep download files: ' + str(keepdownload))
-    if logfile != "":
+    if log:
         print('\tLog file: ' + fullLog)
     else:
         print('\tLog file: None')
@@ -79,6 +111,7 @@ def Summary(hdr):
 
 # defaults
 defSeqProcess = '/usr/local/seq2hla/seq2HLA.py'
+logfile = None
 # command line parser
 parser = ArgumentParser( description = "python script to download dnanex rna seq files and process" )
 parser.add_argument( "mapfile", nargs = 1, help = "file map into dnanexus" )
@@ -94,8 +127,8 @@ parser.add_argument( "--nodownload", action="store_true", default = False,
                      help = "Download only without processing [default: False]" )
 parser.add_argument( "--keepdownload", action="store_true", default = False,
                      help = "Keep dnanexus download files [default: delete after processing]" )
-parser.add_argument( "-l", "--logfile", default = "",
-                     help = "log filename" )
+parser.add_argument( "-l", "--log", action="store_true", default = False,
+                     help = "create log file (interactive only) [default: False]" )
 parser.add_argument( "-a", "--arrayjob", action="store_true", default = False,
                      help = "script submitted as a batch arrayjob [default: False]" )
 parser.add_argument( "-p", "--progress", action="store_true", default = False,
@@ -115,7 +148,7 @@ debug = args.Debug
 filerow = args.filerow
 nodownload = args.nodownload
 progress = args.progress
-logfile = args.logfile
+log = args.log
 arrayjob = args.arrayjob
 seqproc = args.seqproc
 threads = args.threads
@@ -141,7 +174,6 @@ else:
         sys.exit(2)
     workdir = os.path.abspath(workdir)
 
-# handle array type
 if arrayjob:
     # get the batch array index (0 based) which is row number - 1
     echeck = 'AWS_BATCH_JOB_ARRAY_INDEX'
@@ -154,18 +186,29 @@ if arrayjob:
     echeck = 'NSLOTS'
     if echeck in os.environ:
         threads = int(os.environ[echeck])
+    # always log
+    log = True
+else:
+    # filerow is required and an int
+    if filerow == None:
+        pError('File row number (-r/--filerow) is required')
+        sys.exit(2)
+    filerow = int(filerow)
 
-# check for logile and trace file; if so, make it a full path to working directory
+# parse the mapfile
+pInfo('Reading mapfile ' + mapfile)
+mapinfo = parseMapfile(mapfile, filerow)
 
-if logfile != "":
-    fullLog = logfile + "." + str(filerow)
+# create the log file name (full path)
+if log :
+    fullLog = mapinfo['fprefix'] + ".log"
     fullLog = workdir + "/" + fullLog
+# create the trace file name (for arrayjob)
+if arrayjob:
+    traceLog = fullLog.replace(".log",".trace")
+    myLogger = Logger(fullTrace)
+    sys.stderr = sys.stdout = myLogger
 
-# filerow is required and an int
-if filerow == None:
-    pError('File row number (-r/--filerow) is required')
-    sys.exit(2)
-filerow = int(filerow)
 # check for seqproc file
 if not os.path.isfile(seqproc):
     pError('seq2hla processing  file (' + seqproc + ') does not exist')
@@ -175,35 +218,14 @@ seqdir = os.path.dirname(seqproc)
 if summary:
     Summary("Summary of " + __file__)
 
-# read the mapfile
-pInfo('Reading mapfile ' + mapfile)
-maplist = []
-with open(mapfile, mode='r') as csv_file:
-    for row in csv.reader(csv_file):
-        if row:
-            maplist.append(row)
-norows = len(maplist)
-pDebug('Mapfile has ' + str(norows) + ' rows')
-
-# verify the index
-if filerow > norows or filerow < 1:
-    pError('Invalid file index (' + str(filerow) +') : 1/' + str(norows))
-    sys.exit(2)
-
-themap = maplist[filerow-1]
-pDebug("Map info: " + str(themap))
-nof = 5
-if len(themap) != nof:
-    pError("The map record does not have ' + str(nof) + ' fields")
-f1index = 3
-f2index = 5
-fd1 = themap[f1index-1]
-fs1 = workdir + "/" + themap[f1index-2]
-fd2 = themap[f2index-1]
-fs2 = workdir + "/" + themap[f2index-2]
+fd1 = mapinfo['fd1']
+fs1 = workdir + "/" + mapinfo['fs1']
+fd2 = mapinfo['fd2']
+fs2 = workdir + "/" + mapinfo['fs2']
+fprefix = mapinfo['fprefix']
 pDebug('Download files: ' + fd1 + "/" + fd2)
 pDebug('Saved files: ' + fs1 + "/" + fs2)
-pDebug('Prefix: ' + themap[0])
+pDebug('Prefix: ' + fprefix)
 # instantiate dxpy
 pInfo('Instantiating dx')
 try:
@@ -223,10 +245,11 @@ else:
     pInfo('Would download ' + fd2 + ' to ' + fs2)
 
 pfile = seqproc
-cmd = pfile + ' -1 ' + fs1 + ' -2 ' + fs2 + " -r " + workdir + "/"+ themap[0]
+cmd = pfile + ' -1 ' + fs1 + ' -2 ' + fs2 + " -r " + workdir + "/"+ fprefix
 if threads != None:
     cmd = cmd + " -p " + str(threads)
-pInfo( "Executing " + cmd )
+pInfo( "cmd> " + cmd )
+flush()
 if noprocess:
     pInfo('Not processing; script is exiting.')
     sys.exit(0)
@@ -238,27 +261,30 @@ else:
     if not os.path.isfile(fs2):
         pError('File to process (' + fs2 + ') does not exist')
         sys.exit(2)
+    pInfo("Executing popen ...")
+    flush()
     # redirect stdout to logile
-    if logfile != "":
+    if log:
         sout = sys.stdout
         serr = sys.stderr
         flog = open ( fullLog, 'w' )
         sys.stderr = sys.stdout = flog
-    # spawn
+    # popen
     try:
         process = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr, shell=True, cwd=seqdir)
         status = process.wait()
     except Exception as e:
         # redirect stdout back
-        if logfile != "":
+        if log:
             sys.stdout = sout
             sys.stderr = serr
         pError('Error executing popen' + str(e))
         sys.exit(2)
     # redirect stdout back
-    if logfile != "":
+    if log:
         sys.stdout = sout
         sys.stderr = serr
+    flush()
     # check status
     if status:
         pError( "Error executing " + pfile + ': ' + str(status) )
@@ -269,3 +295,4 @@ else:
             os.remove(fs1)
             os.remove(fs2)
         pInfo( "Executing " + pfile + " completed without errors.")
+        sys.exit(0)
